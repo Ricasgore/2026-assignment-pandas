@@ -40,7 +40,10 @@ def merge_regions_and_departments(regions, departments):
     )
 
     regions_and_departments = pd.merge(
-        regions, departments, on="code_reg", how="inner"
+        regions[["code_reg", "name_reg"]],
+        departments[["code_reg", "code_dep", "name_dep"]],
+        on="code_reg",
+        how="inner",
     )
 
     return regions_and_departments
@@ -49,8 +52,16 @@ def merge_regions_and_departments(regions, departments):
 def merge_referendum_and_areas(referendum, regions_and_departments):
     """Merge referendum and regions_and_departments in one DataFrame.
 
-    (garde ta docstring d'origine)
+    You can drop the lines relative to DOM-TOM-COM departments, and the
+    french living abroad, which all have a code that contains `Z`.
+
+    DOM-TOM-COM departments are departements that are remote from metropolitan
+    France, like Guadaloupe, Reunion, or Tahiti.
     """
+    referendum = referendum.copy()
+    referendum["Department code"] = (
+        referendum["Department code"].astype(str).str.zfill(2)
+    )
     referendum = referendum[~referendum["Department code"].str.contains("Z")]
 
     referendum_and_areas = pd.merge(
@@ -58,7 +69,7 @@ def merge_referendum_and_areas(referendum, regions_and_departments):
         regions_and_departments,
         left_on="Department code",
         right_on="code_dep",
-        how="left",
+        how="inner",
     )
 
     return referendum_and_areas
